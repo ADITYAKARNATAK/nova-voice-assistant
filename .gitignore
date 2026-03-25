@@ -1,0 +1,35 @@
+# ============================================
+# .gitignore — Files Git Should NEVER Upload
+# ============================================
+
+# Virtual environment — never push this
+venv/
+env/
+ENV/
+
+# Config file with API keys — NEVER push!
+config.py
+
+# PyInstaller build files
+dist/
+build/
+*.spec
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code settings
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Test files (optional to exclude)
+test_mic.py
+speech_to_text.py
+text_to_speech.py
+command_handler.py
