@@ -1,15 +1,19 @@
-# utils.py — Utility Functions (Terminal Version)
-from datetime import datetime
-import pytz, webbrowser, random
+# utils.py — Utility Functions with IST time
+from datetime import datetime, timedelta
+import random, webbrowser
 
-IST = pytz.timezone("Asia/Kolkata")
-
-def now_ist():
-    return datetime.now(IST)
+try:
+    import pytz
+    IST = pytz.timezone("Asia/Kolkata")
+    def now_ist():
+        return datetime.now(IST)
+except ImportError:
+    def now_ist():
+        return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 def get_greeting():
     h = now_ist().hour
-    if 5 <= h < 12:   return "Good morning"
+    if 5  <= h < 12: return "Good morning"
     elif 12 <= h < 17: return "Good afternoon"
     elif 17 <= h < 21: return "Good evening"
     else:              return "Good night"
@@ -18,7 +22,7 @@ def tell_time(speak_fn):
     n = now_ist()
     h = n.hour
     period = "morning" if h < 12 else "afternoon" if h < 17 else "evening" if h < 21 else "night"
-    r = f"It's {n.strftime('%I:%M %p')} IST, {period}."
+    r = f"The current time in India is {n.strftime('%I:%M %p')} IST. It is {period}."
     speak_fn(r); return r
 
 def tell_date(speak_fn):
@@ -27,7 +31,8 @@ def tell_date(speak_fn):
     speak_fn(r); return r
 
 def greet_user(speak_fn):
-    r = f"{get_greeting()}! I'm Luffy AI, your personal AI assistant. What can I help you with?"
+    g = get_greeting()
+    r = f"{g}! I'm Luffy AI, your personal assistant. How can I help you today?"
     speak_fn(r); return r
 
 def tell_joke(speak_fn):
@@ -43,9 +48,9 @@ def tell_joke(speak_fn):
 
 def tell_fact(speak_fn):
     facts = [
-        "Honey never spoils — archaeologists found 3000-year-old honey that was still good!",
+        "Honey never spoils — archaeologists found 3000 year old honey that was still good!",
         "Octopuses have three hearts and blue blood.",
-        "The first computer bug was an actual moth found in a Harvard computer in 1947!",
+        "The first computer bug was an actual moth found in a Harvard computer in 1947.",
         "Python was named after Monty Python, not the snake.",
         "Bananas are technically berries, but strawberries are not.",
     ]
@@ -53,7 +58,9 @@ def tell_fact(speak_fn):
     speak_fn(r); return r
 
 def tell_weather(text, speak_fn):
-    city = text.replace("weather in","").replace("weather of","").replace("weather","").strip()
+    city = (text.replace("weather in","")
+                .replace("weather of","")
+                .replace("weather","").strip())
     if city:
         r = f"Looking up weather in {city}!"
         speak_fn(r)
@@ -66,8 +73,5 @@ def tell_weather(text, speak_fn):
 
 def system_status(speak_fn):
     n = now_ist()
-    r = f"All systems running! It's {n.strftime('%I:%M %p IST')} on {n.strftime('%A, %B %d, %Y')}."
+    r = f"All systems running! It is {n.strftime('%I:%M %p IST')} on {n.strftime('%A, %B %d, %Y')}."
     speak_fn(r); return r
-
-def tell_fact_fn(speak_fn):
-    return tell_fact(speak_fn)

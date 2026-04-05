@@ -2,17 +2,17 @@
 import webbrowser, os
 
 WEBSITES = {
-    "google": "https://www.google.com", "youtube": "https://www.youtube.com",
-    "github": "https://www.github.com", "gmail": "https://www.gmail.com",
-    "whatsapp": "https://web.whatsapp.com", "instagram": "https://www.instagram.com",
-    "twitter": "https://www.twitter.com", "linkedin": "https://www.linkedin.com",
-    "netflix": "https://www.netflix.com", "chatgpt": "https://chat.openai.com",
-    "stackoverflow": "https://www.stackoverflow.com", "amazon": "https://www.amazon.in",
-    "reddit": "https://www.reddit.com", "spotify": "https://www.spotify.com",
+    "google":"https://www.google.com","youtube":"https://www.youtube.com",
+    "github":"https://www.github.com","gmail":"https://www.gmail.com",
+    "whatsapp":"https://web.whatsapp.com","instagram":"https://www.instagram.com",
+    "twitter":"https://www.twitter.com","linkedin":"https://www.linkedin.com",
+    "netflix":"https://www.netflix.com","chatgpt":"https://chat.openai.com",
+    "stackoverflow":"https://www.stackoverflow.com","amazon":"https://www.amazon.in",
+    "reddit":"https://www.reddit.com","spotify":"https://www.spotify.com",
 }
 APPS = {
-    "notepad": "notepad", "calculator": "calc", "file explorer": "explorer",
-    "task manager": "taskmgr", "paint": "mspaint", "vs code": "code",
+    "notepad":"notepad","calculator":"calc","file explorer":"explorer",
+    "task manager":"taskmgr","paint":"mspaint","vs code":"code",
 }
 
 def open_website(text, speak_fn):
