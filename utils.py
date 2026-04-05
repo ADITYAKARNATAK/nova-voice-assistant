@@ -1,133 +1,73 @@
-# ============================================
-# utils.py — Smart Utility Functions
-# Luffy AI Assistant — Final Version
-# ============================================
-
+# utils.py — Utility Functions (Terminal Version)
 from datetime import datetime
-import webbrowser
-import random
+import pytz, webbrowser, random
 
+IST = pytz.timezone("Asia/Kolkata")
 
-def tell_time(speak_fn):
-    now = datetime.now()
-    hour = now.hour
-    formatted_time = now.strftime("%I:%M %p")
-    if 5 <= hour < 12:
-        period = "in the morning"
-    elif 12 <= hour < 17:
-        period = "in the afternoon"
-    elif 17 <= hour < 21:
-        period = "in the evening"
-    else:
-        period = "at night"
-    response = f"It is {formatted_time} {period}."
-    if hour == 0 and now.minute < 5:
-        response += " It's midnight! Even pirates need sleep!"
-    elif hour == 12 and now.minute < 5:
-        response += " It's noon! Meat time!"
-    elif 4 <= hour < 6:
-        response += " You're up early, like a true pirate setting sail!"
-    elif hour >= 23:
-        response += " It's late! Even the Grand Line sleeps sometimes!"
-    speak_fn(response)
-    return response
-
-
-def tell_date(speak_fn):
-    now = datetime.now()
-    day_name   = now.strftime("%A")
-    month_name = now.strftime("%B")
-    day_number = now.strftime("%d")
-    year       = now.strftime("%Y")
-    response = f"Today is {day_name}, {month_name} {day_number}, {year}."
-    if day_name == "Monday":
-        response += " New week, new adventure! Set sail!"
-    elif day_name == "Friday":
-        response += " It's Friday! The party's starting on the Thousand Sunny!"
-    elif day_name in ["Saturday", "Sunday"]:
-        response += " Weekend! Time for a feast like a true pirate!"
-    speak_fn(response)
-    return response
-
+def now_ist():
+    return datetime.now(IST)
 
 def get_greeting():
-    hour = datetime.now().hour
-    if 5 <= hour < 12:
-        return "Good morning, nakama"
-    elif 12 <= hour < 17:
-        return "Good afternoon, nakama"
-    elif 17 <= hour < 21:
-        return "Good evening, nakama"
-    else:
-        return "Good night, nakama"
+    h = now_ist().hour
+    if 5 <= h < 12:   return "Good morning"
+    elif 12 <= h < 17: return "Good afternoon"
+    elif 17 <= h < 21: return "Good evening"
+    else:              return "Good night"
 
+def tell_time(speak_fn):
+    n = now_ist()
+    h = n.hour
+    period = "morning" if h < 12 else "afternoon" if h < 17 else "evening" if h < 21 else "night"
+    r = f"It's {n.strftime('%I:%M %p')} IST, {period}."
+    speak_fn(r); return r
+
+def tell_date(speak_fn):
+    n = now_ist()
+    r = f"Today is {n.strftime('%A, %B %d, %Y')}."
+    speak_fn(r); return r
 
 def greet_user(speak_fn):
-    greeting = get_greeting()
-    response = f"{greeting}! I'm Luffy, your AI first mate! I'm gonna be King of the Pirates AND your best assistant!"
-    speak_fn(response)
-    return response
-
+    r = f"{get_greeting()}! I'm Luffy AI, your personal AI assistant. What can I help you with?"
+    speak_fn(r); return r
 
 def tell_joke(speak_fn):
     jokes = [
-        "Why do programmers prefer dark mode? Because light attracts bugs, and I hate bugs unless they're Sea Kings!",
-        "Why did the pirate fail programming? Because he kept using the wrong Arrr-ray!",
-        "How many programmers does it take to change a light bulb? None, that's a hardware problem — ask Franky!",
-        "Why do Python programmers wear glasses? Because they can't C! Get it? Like Sea? Haha!",
-        "What did Zoro say to the compiler? I'm going to need more than one path to get there!",
-        "A SQL query walks into a bar and asks two tables: Can I join you? Just like the Straw Hat crew!",
-        "Why was Nami always good at coding? She always knew how to handle exceptions... and money!",
+        "Why do programmers prefer dark mode? Because light attracts bugs!",
+        "Why did the developer go broke? He used up all his cache!",
+        "Why do Python developers wear glasses? Because they can't C!",
+        "A SQL query walks into a bar and asks two tables: Can I join you?",
+        "What's a pirate's favorite programming language? Arrr-duino!",
     ]
-    joke = random.choice(jokes)
-    speak_fn(joke)
-    return joke
-
-
-def tell_weather(text, speak_fn):
-    if "weather in" in text:
-        city = text.replace("weather in", "").strip()
-    elif "weather of" in text:
-        city = text.replace("weather of", "").strip()
-    elif "weather" in text:
-        city = text.replace("weather", "").strip()
-    else:
-        city = ""
-    if city:
-        response = f"Aye aye! Checking the weather in {city} for our voyage!"
-        speak_fn(response)
-        webbrowser.open(f"https://www.google.com/search?q=weather+in+{city.replace(' ', '+')}")
-    else:
-        response = "Checking today's weather — Nami would want to know before we set sail!"
-        speak_fn(response)
-        webbrowser.open("https://www.google.com/search?q=weather+today")
-    return response
-
+    r = random.choice(jokes)
+    speak_fn(r); return r
 
 def tell_fact(speak_fn):
     facts = [
-        "Honey never spoils. Archaeologists found 3000 year old honey in Egyptian tombs that was still good!",
-        "A group of flamingos is called a flamboyance. Even cooler than a pirate crew name!",
-        "Octopuses have three hearts and blue blood. Haki training must be intense for them!",
-        "The first computer bug was an actual bug — a moth found in a Harvard computer in 1947!",
-        "Python was named after Monty Python, not the snake. Though snakes are cool like Sea Kings!",
-        "Bananas are technically berries, but strawberries are not. Chopper finds this medically fascinating!",
-        "There are more possible chess games than atoms in the observable universe. Even Zoro would get lost in that!",
-        "A day on Venus is longer than a year on Venus. Navigation in space is harder than the Grand Line!",
+        "Honey never spoils — archaeologists found 3000-year-old honey that was still good!",
+        "Octopuses have three hearts and blue blood.",
+        "The first computer bug was an actual moth found in a Harvard computer in 1947!",
+        "Python was named after Monty Python, not the snake.",
+        "Bananas are technically berries, but strawberries are not.",
     ]
-    fact = random.choice(facts)
-    response = f"Here's an interesting fact, nakama: {fact}"
-    speak_fn(response)
-    return response
+    r = random.choice(facts)
+    speak_fn(r); return r
 
+def tell_weather(text, speak_fn):
+    city = text.replace("weather in","").replace("weather of","").replace("weather","").strip()
+    if city:
+        r = f"Looking up weather in {city}!"
+        speak_fn(r)
+        webbrowser.open(f"https://www.google.com/search?q=weather+in+{city.replace(' ','+')}")
+    else:
+        r = "Looking up today's weather!"
+        speak_fn(r)
+        webbrowser.open("https://www.google.com/search?q=weather+today")
+    return r
 
 def system_status(speak_fn):
-    now = datetime.now()
-    greeting = get_greeting()
-    time_str = now.strftime("%I:%M %p")
-    date_str = now.strftime("%A, %B %d %Y")
-    response = (f"The Thousand Sunny is sailing smoothly! {greeting}! "
-                f"It is {time_str} on {date_str}. "
-                f"Luffy AI is fully powered up and ready to assist!")
-    speak_fn(response)
-    return response
+    n = now_ist()
+    r = f"All systems running! It's {n.strftime('%I:%M %p IST')} on {n.strftime('%A, %B %d, %Y')}."
+    speak_fn(r); return r
+
+def tell_fact_fn(speak_fn):
+    return tell_fact(speak_fn)

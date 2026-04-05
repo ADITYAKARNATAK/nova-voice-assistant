@@ -1,15 +1,17 @@
 # ============================================================
-#  app.py — Luffy AI Web App
-#  Anime-Style UI — Streamlit Cloud Ready
-#  One Piece Themed AI Assistant
+#  app.py — Luffy AI Web App — FINAL ULTIMATE VERSION
+#  Uses st.chat_message (no raw HTML bugs)
+#  Indian Standard Time (IST)
+#  Normal helpful responses + One Piece theme
 # ============================================================
 
 import streamlit as st
 import datetime
 import random
 import os
+import pytz  # For Indian Standard Time
 
-# ─── Page config — MUST be first Streamlit call ───────────
+# ── Page config ────────────────────────────────────────────
 st.set_page_config(
     page_title="Luffy AI — Your Pirate Assistant",
     page_icon="🏴‍☠️",
@@ -17,912 +19,660 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ═══════════════════════════════════════════════════════════
-# ANIME CSS — One Piece themed dark UI
-# ═══════════════════════════════════════════════════════════
+# ── Indian Standard Time helper ───────────────────────────
+IST = pytz.timezone("Asia/Kolkata")
+
+def now_ist():
+    """Returns current datetime in Indian Standard Time."""
+    return datetime.datetime.now(IST)
+
+def time_str():
+    return now_ist().strftime("%I:%M %p IST")
+
+def date_str():
+    return now_ist().strftime("%A, %B %d, %Y")
+
+def greeting():
+    h = now_ist().hour
+    if 5 <= h < 12:  return "Good morning"
+    elif 12 <= h < 17: return "Good afternoon"
+    elif 17 <= h < 21: return "Good evening"
+    else:              return "Good night"
+
+# ── CSS — One Piece Anime Dark Theme ─────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap');
 
-/* ── Root variables ── */
 :root {
-    --red:      #e63946;
-    --gold:     #ffd60a;
-    --navy:     #0a0e1a;
-    --navy2:    #111827;
-    --navy3:    #1a2332;
-    --card:     #1e2d3d;
-    --card2:    #243447;
-    --border:   #2a3f5a;
-    --text:     #e8eaf0;
-    --dim:      #8899aa;
-    --white:    #ffffff;
-    --glow-red: 0 0 20px rgba(230,57,70,0.5);
-    --glow-gold:0 0 20px rgba(255,214,10,0.4);
+    --red:    #e63946;
+    --gold:   #ffd60a;
+    --navy:   #0a0e1a;
+    --navy2:  #111827;
+    --card:   #1e2d3d;
+    --border: #2a3f5a;
+    --text:   #e8eaf0;
+    --dim:    #8899aa;
 }
 
-/* ── Reset & base ── */
-* { box-sizing: border-box; }
-
+/* Base */
 .stApp {
     background: var(--navy) !important;
     font-family: 'Nunito', sans-serif !important;
     background-image:
-        radial-gradient(ellipse at 20% 20%, rgba(230,57,70,0.06) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(255,214,10,0.04) 0%, transparent 50%),
-        repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 60px,
-            rgba(42,63,90,0.15) 60px,
-            rgba(42,63,90,0.15) 61px
-        ),
-        repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 60px,
-            rgba(42,63,90,0.15) 60px,
-            rgba(42,63,90,0.15) 61px
-        ) !important;
+        radial-gradient(ellipse at 15% 15%, rgba(230,57,70,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 85%, rgba(255,214,10,0.05) 0%, transparent 50%) !important;
 }
 
 /* Hide streamlit chrome */
 #MainMenu, footer, header { visibility: hidden !important; }
-.stDeployButton { display: none !important; }
-[data-testid="stToolbar"] { display: none !important; }
-section[data-testid="stSidebar"] { display: none !important; }
+.stDeployButton, [data-testid="stToolbar"] { display: none !important; }
 
-/* ── Main container ── */
+/* Main container */
 .main .block-container {
-    max-width: 780px !important;
-    padding: 0 16px 40px 16px !important;
+    max-width: 800px !important;
+    padding: 0 20px 60px 20px !important;
 }
 
 /* ── HEADER ── */
 .luffy-header {
     text-align: center;
-    padding: 32px 20px 20px 20px;
-    position: relative;
+    padding: 28px 0 8px 0;
 }
-
-.straw-hat-icon {
-    font-size: 72px;
+.hat-icon {
+    font-size: 64px;
     display: block;
-    margin: 0 auto 8px auto;
-    filter: drop-shadow(0 0 16px rgba(255,214,10,0.6));
     animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 18px rgba(255,214,10,0.7));
 }
-
 @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(-3deg); }
-    50%       { transform: translateY(-10px) rotate(3deg); }
+    0%,100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-10px) rotate(4deg); }
 }
-
-.luffy-title {
+.main-title {
     font-family: 'Bangers', cursive !important;
-    font-size: 56px !important;
-    letter-spacing: 4px;
-    background: linear-gradient(135deg, #ffd60a, #e63946, #ffd60a);
+    font-size: 58px !important;
+    letter-spacing: 5px !important;
+    background: linear-gradient(135deg, #ffd60a 0%, #e63946 50%, #ffd60a 100%);
     background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: shimmer 3s linear infinite;
-    margin: 0;
-    line-height: 1;
-    text-shadow: none;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    animation: shine 3s linear infinite;
+    margin: 0 !important; line-height: 1 !important;
 }
-
-@keyframes shimmer {
+@keyframes shine {
     0%   { background-position: 0% center; }
     100% { background-position: 200% center; }
 }
-
-.luffy-subtitle {
-    font-size: 14px;
+.sub-title {
     color: var(--dim);
+    font-size: 13px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    margin: 6px 0 0 0;
-    font-weight: 600;
+    font-weight: 700;
+    margin: 6px 0 10px 0;
 }
-
-.nakama-badge {
+.status-badge {
     display: inline-block;
-    background: linear-gradient(135deg, rgba(230,57,70,0.2), rgba(255,214,10,0.1));
-    border: 1px solid rgba(255,214,10,0.3);
     border-radius: 20px;
-    padding: 4px 16px;
+    padding: 5px 18px;
     font-size: 12px;
-    color: var(--gold);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-weight: 700;
-    margin-top: 10px;
-}
-
-/* ── Divider ── */
-.pirate-divider {
-    text-align: center;
-    color: var(--border);
-    font-size: 18px;
-    letter-spacing: 8px;
-    margin: 16px 0;
-    opacity: 0.6;
-}
-
-/* ── API Key Banner ── */
-.api-banner {
-    background: linear-gradient(135deg, rgba(230,57,70,0.15), rgba(255,214,10,0.08));
-    border: 1px solid rgba(230,57,70,0.4);
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin: 0 0 16px 0;
-    text-align: center;
-    color: #ffb3ba;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.api-banner a {
-    color: var(--gold) !important;
-    text-decoration: none;
-    font-weight: 700;
-}
-
-/* ── Chat area ── */
-.chat-area {
-    background: var(--navy2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px 16px;
-    min-height: 420px;
-    max-height: 520px;
-    overflow-y: auto;
-    margin-bottom: 16px;
-    scroll-behavior: smooth;
-}
-
-.chat-area::-webkit-scrollbar { width: 4px; }
-.chat-area::-webkit-scrollbar-track { background: transparent; }
-.chat-area::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-}
-
-/* ── Message bubbles ── */
-.msg-row {
-    display: flex;
-    margin-bottom: 16px;
-    animation: fadeUp 0.3s ease;
-    align-items: flex-end;
-    gap: 10px;
-}
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.msg-row.user { flex-direction: row-reverse; }
-
-/* Avatar */
-.avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-    border: 2px solid var(--border);
-}
-
-.avatar.luffy-av {
-    background: linear-gradient(135deg, #e63946, #c1121f);
-    border-color: var(--red);
-    box-shadow: var(--glow-red);
-}
-
-.avatar.user-av {
-    background: linear-gradient(135deg, #1a4a6b, #0d2137);
-    border-color: #2a6090;
-}
-
-/* Bubble */
-.bubble-wrap { display: flex; flex-direction: column; max-width: 72%; }
-.msg-row.user .bubble-wrap { align-items: flex-end; }
-
-.sender-name {
-    font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
     margin-bottom: 4px;
-    padding: 0 4px;
+}
+.connected {
+    background: rgba(52,168,83,0.15);
+    border: 1px solid rgba(52,168,83,0.5);
+    color: #4ade80;
+}
+.disconnected {
+    background: rgba(230,57,70,0.15);
+    border: 1px solid rgba(230,57,70,0.5);
+    color: #ff6b6b;
 }
 
-.luffy-name { color: var(--red); }
-.user-name-label { color: #4d9de0; }
-
-.bubble {
-    padding: 12px 16px;
-    border-radius: 16px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--text);
-    word-break: break-word;
-}
-
-.luffy-bubble {
-    background: linear-gradient(135deg, var(--card), var(--card2));
-    border: 1px solid var(--border);
-    border-bottom-left-radius: 4px;
-}
-
-.user-bubble {
-    background: linear-gradient(135deg, #1a3a5c, #0f2540);
-    border: 1px solid #2a5080;
-    border-bottom-right-radius: 4px;
-    text-align: right;
-}
-
-.timestamp {
-    font-size: 10px;
-    color: var(--dim);
-    margin-top: 4px;
-    padding: 0 4px;
-}
-
-/* Thinking bubble */
-.thinking-bubble {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    border-bottom-left-radius: 4px;
-    padding: 12px 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    background: var(--red);
-    border-radius: 50%;
-    animation: bounce 1.2s ease infinite;
-}
-
-.dot:nth-child(2) { animation-delay: 0.2s; background: var(--gold); }
-.dot:nth-child(3) { animation-delay: 0.4s; background: var(--red); }
-
-@keyframes bounce {
-    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-    40%           { transform: scale(1);   opacity: 1; }
-}
-
-/* System message */
-.sys-msg {
-    text-align: center;
-    color: var(--dim);
-    font-size: 12px;
-    letter-spacing: 1px;
-    padding: 8px;
+/* ── STATS ── */
+.stats-row {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 8px;
-}
-
-.sys-msg::before, .sys-msg::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-}
-
-/* ── Input area ── */
-.input-section {
+    gap: 0;
     background: var(--navy2);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
+    border-radius: 14px;
+    margin: 14px 0;
+    overflow: hidden;
+}
+.stat-cell {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    border-right: 1px solid var(--border);
+}
+.stat-cell:last-child { border-right: none; }
+.stat-val {
+    font-family: 'Bangers', cursive;
+    font-size: 20px;
+    color: var(--gold);
+    display: block;
+    line-height: 1.2;
+}
+.stat-lbl {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: block;
 }
 
-/* Override Streamlit text input */
-div[data-testid="stTextInput"] input {
-    background: var(--navy3) !important;
-    color: var(--text) !important;
+/* ── API WARNING ── */
+.api-warn {
+    background: rgba(230,57,70,0.12);
+    border: 1px solid rgba(230,57,70,0.4);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: #ffb3ba;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin: 10px 0;
+    line-height: 1.7;
+}
+.api-warn code {
+    background: rgba(0,0,0,0.4);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--gold);
+    font-size: 12px;
+}
+.api-warn a { color: var(--gold) !important; font-weight: 700; }
+
+/* ── CHAT MESSAGES — override Streamlit defaults ── */
+[data-testid="stChatMessage"] {
+    background: var(--navy2) !important;
     border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
-    padding: 12px 18px !important;
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 10px !important;
+}
+[data-testid="stChatMessage"] p {
+    color: var(--text) !important;
+    font-family: 'Nunito', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+    margin: 0 !important;
+}
+/* User message different color */
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+    background: rgba(26, 58, 92, 0.6) !important;
+    border-color: #2a5080 !important;
+}
+
+/* ── INPUT ── */
+[data-testid="stChatInput"] {
+    background: var(--navy2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+}
+[data-testid="stChatInput"] textarea {
+    background: var(--navy2) !important;
+    color: var(--text) !important;
     font-family: 'Nunito', sans-serif !important;
     font-size: 14px !important;
     font-weight: 600 !important;
-    transition: border-color 0.2s !important;
 }
-
-div[data-testid="stTextInput"] input:focus {
-    border-color: var(--red) !important;
-    box-shadow: 0 0 0 2px rgba(230,57,70,0.2) !important;
-    outline: none !important;
-}
-
-div[data-testid="stTextInput"] input::placeholder {
+[data-testid="stChatInput"] textarea::placeholder {
     color: var(--dim) !important;
 }
+[data-testid="stChatInput"] button {
+    background: var(--red) !important;
+    border-radius: 8px !important;
+}
 
-div[data-testid="stTextInput"] label { display: none !important; }
-
-/* Streamlit buttons */
+/* ── QUICK BUTTONS ── */
 .stButton > button {
-    background: linear-gradient(135deg, var(--red), #c1121f) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 12px !important;
-    font-family: 'Bangers', cursive !important;
-    font-size: 16px !important;
-    letter-spacing: 2px !important;
-    padding: 10px 20px !important;
+    background: var(--card) !important;
+    color: var(--dim) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 20px !important;
+    font-family: 'Nunito', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 6px 12px !important;
     transition: all 0.2s !important;
-    box-shadow: 0 4px 15px rgba(230,57,70,0.3) !important;
+    white-space: nowrap !important;
     width: 100% !important;
 }
-
 .stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(230,57,70,0.5) !important;
+    border-color: var(--red) !important;
+    color: var(--text) !important;
+    background: rgba(230,57,70,0.1) !important;
 }
 
-/* ── Quick commands ── */
-.quick-title {
+/* Clear button */
+.clear-btn > button {
+    background: transparent !important;
+    border-color: var(--border) !important;
+    color: var(--dim) !important;
+    font-size: 11px !important;
+    padding: 4px 12px !important;
+}
+
+/* ── DIVIDER ── */
+.divider {
+    text-align: center;
+    color: var(--border);
+    font-size: 16px;
+    letter-spacing: 8px;
+    margin: 10px 0;
+    opacity: 0.5;
+}
+
+/* ── FOOTER ── */
+.footer {
+    text-align: center;
+    color: var(--dim);
     font-size: 11px;
-    color: var(--dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-weight: 700;
-    margin: 0 0 10px 0;
-    text-align: center;
-}
-
-.quick-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-}
-
-.quick-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 12px;
-    color: var(--dim);
-    cursor: pointer;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 600;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.quick-btn:hover {
-    border-color: var(--red);
-    color: var(--text);
-    background: var(--card2);
-}
-
-/* ── Crew stats bar ── */
-.stats-bar {
-    display: flex;
-    justify-content: center;
-    gap: 24px;
-    padding: 12px 20px;
-    background: var(--navy2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 16px;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-value {
-    font-family: 'Bangers', cursive;
-    font-size: 22px;
-    color: var(--gold);
-    line-height: 1;
-}
-
-.stat-label {
-    font-size: 10px;
-    color: var(--dim);
     letter-spacing: 1px;
-    text-transform: uppercase;
-    font-weight: 700;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
 }
+.footer strong { color: var(--gold); }
 
-/* ── Footer ── */
-.pirate-footer {
-    text-align: center;
-    padding: 16px 0 0 0;
-    color: var(--dim);
-    font-size: 12px;
-    letter-spacing: 1px;
-}
-
-/* Sidebar override */
-.css-1d391kg, [data-testid="stSidebar"] { display: none !important; }
-
-/* Remove streamlit padding */
-.css-18e3th9 { padding-top: 0 !important; }
-.css-1d391kg { padding: 0 !important; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════
-# HELPER FUNCTIONS
+# GEMINI SETUP
 # ═══════════════════════════════════════════════════════════
 
 def get_api_key():
-    """Gets API key from Streamlit secrets or environment."""
-    # Try Streamlit secrets first
+    """Gets API key — tries Streamlit secrets then env variable."""
     try:
-        key = st.secrets.get("GEMINI_API_KEY", "")
-        if key and key != "YOUR_GEMINI_API_KEY_HERE":
-            return key
+        k = st.secrets.get("GEMINI_API_KEY", "")
+        if k and k != "YOUR_GEMINI_API_KEY_HERE":
+            return k
     except Exception:
         pass
-    # Try environment variable
-    key = os.environ.get("GEMINI_API_KEY", "")
-    if key:
-        return key
-    return ""
+    return os.environ.get("GEMINI_API_KEY", "")
 
 
 @st.cache_resource
-def setup_gemini(api_key):
-    """Creates Gemini model — cached so it's only created once."""
+def load_model(api_key: str):
+    """Loads Gemini model once and caches it."""
     if not api_key:
         return None
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(
+        return genai.GenerativeModel(
             model_name="gemini-1.5-flash",
             generation_config={
-                "max_output_tokens": 500,
-                "temperature"      : 0.85,
+                "max_output_tokens": 600,
+                "temperature":       0.75,
             },
             system_instruction="""
-You are Luffy, an enthusiastic AI assistant inspired by Monkey D. Luffy from One Piece.
-You are helpful, energetic, and friendly — but also genuinely intelligent and knowledgeable.
+You are Luffy AI, a helpful and enthusiastic AI assistant.
+Your personality is inspired by Monkey D. Luffy from One Piece — you are energetic, positive, brave, and never give up.
 
-PERSONALITY RULES:
-- Be enthusiastic and positive
-- Occasionally use One Piece references naturally (Nakama, Shishishi!, Grand Line, Devil Fruit, Haki, Straw Hat crew)
-- Give COMPLETE, ACCURATE answers — never be vague
-- Keep responses conversational — no bullet points, no markdown symbols like ** or ##
-- For code questions: explain clearly and give working examples
-- For factual questions: be accurate and informative
-- Maximum 5 sentences unless the question needs a longer answer
-- You are LUFFY AI — never say you are Gemini or made by Google
-- Be warm and encouraging — every question matters!
-- For math/calculations: show the working clearly
+STRICT RULES:
+1. Give COMPLETE, ACCURATE, HELPFUL answers — never be vague or refuse reasonable questions
+2. Write in plain readable text — NO markdown symbols like **, ##, *, -
+3. Keep responses conversational — like talking to a smart friend
+4. For code: write clean working code with brief explanation
+5. For math: show the calculation clearly and give the answer
+6. For facts: be accurate and informative
+7. Keep responses to 3-5 sentences unless the topic needs more detail
+8. You are LUFFY AI — never say you are Gemini or made by Google
+9. Occasionally add ONE short enthusiastic phrase like "Let's go!" or "That's awesome!" naturally
+10. ALWAYS answer the question — never say you cannot help
+
+IMPORTANT: Do NOT use Nakama excessively. Talk normally like a helpful assistant with a fun personality.
             """
         )
-        return model
-    except Exception as e:
+    except Exception:
         return None
 
 
-def ask_gemini(model, question, history):
-    """Asks Gemini a question with conversation history."""
+def ask_ai(model, question: str, history: list) -> str:
+    """Sends question to Gemini with conversation history."""
     if not model:
-        return ("Shishishi! I need my Gemini API key to answer that! "
-                "Add GEMINI_API_KEY in Streamlit → Settings → Secrets. "
-                "Get a FREE key at aistudio.google.com/app/apikey — it only takes 1 minute, nakama!")
+        return (
+            "I need my Gemini API key to answer that! "
+            "Please add GEMINI_API_KEY in Streamlit → Manage App → Settings → Secrets. "
+            "Get a FREE key in 60 seconds at: aistudio.google.com/app/apikey"
+        )
     try:
-        # Build conversation history for context
-        chat = model.start_chat(history=[
-            {"role": "user" if m["role"] == "user" else "model",
-             "parts": [m["content"]]}
-            for m in history[-10:]  # Last 10 messages for context
-            if m["role"] in ["user", "luffy"]
-        ])
-        response = chat.send_message(question)
-        answer = response.text.strip()
-        # Clean markdown
-        for sym in ["**", "__", "##", "# ", "* ", "- "]:
+        # Build history for context (last 8 exchanges)
+        chat_history = []
+        for m in history[-16:]:
+            if m["role"] == "user":
+                chat_history.append({"role": "user",   "parts": [m["content"]]})
+            elif m["role"] == "assistant":
+                chat_history.append({"role": "model",  "parts": [m["content"]]})
+
+        chat = model.start_chat(history=chat_history)
+        resp = chat.send_message(question)
+        answer = resp.text.strip()
+
+        # Clean any accidental markdown
+        for sym in ["**", "__", "```", "##", "# "]:
             answer = answer.replace(sym, "")
+
         return answer
+
     except Exception as e:
         err = str(e).lower()
-        if "api_key" in err or "invalid" in err or "api key" in err:
-            return ("My API key has an issue! Make sure GEMINI_API_KEY is correctly set "
-                    "in Streamlit secrets. Get a free key at aistudio.google.com/app/apikey!")
+        if "api_key" in err or "invalid" in err or "key" in err:
+            return "My API key seems incorrect. Check that GEMINI_API_KEY is set correctly in Streamlit secrets."
         elif "quota" in err or "limit" in err:
-            return "I've hit my daily limit! Even pirates need rest. Try again tomorrow nakama!"
+            return "I've hit today's usage limit! Try again tomorrow or check your Gemini API quota."
         elif "network" in err or "connect" in err:
-            return "Can't reach my AI brain right now — check your internet connection nakama!"
+            return "Network error — please check your internet connection and try again."
+        elif "safety" in err or "block" in err:
+            return "I can't answer that particular question, but I'm happy to help with anything else!"
         else:
-            return f"Something went wrong! Try asking again nakama. Error: {str(e)[:60]}"
-
-
-def handle_command_web(text, model, history):
-    """Routes commands — specific ones first, AI fallback for everything else."""
-    t = text.lower().strip()
-    now = datetime.datetime.now()
-
-    # ── Time ──
-    if "time" in t and "?" in text or t in ["time", "what time", "current time"]:
-        return f"Shishishi! It's {now.strftime('%I:%M %p')} right now nakama!"
-
-    if "what time" in t or t.startswith("time"):
-        return f"It's {now.strftime('%I:%M %p')} — {'morning' if now.hour < 12 else 'afternoon' if now.hour < 17 else 'evening'} nakama!"
-
-    # ── Date ──
-    if "what date" in t or "today's date" in t or t in ["date", "today"]:
-        return f"Today is {now.strftime('%A, %B %d, %Y')} — set sail nakama!"
-
-    # ── Greeting ──
-    if t in ["hi", "hello", "hey", "howdy", "yo"] or t.startswith("hello") or t.startswith("hi "):
-        hour = now.hour
-        g = "Good morning" if hour < 12 else "Good afternoon" if hour < 17 else "Good evening"
-        return (f"Shishishi! {g} nakama! I'm Luffy, your AI first mate! "
-                f"I've got Gemini AI powers — ask me ANYTHING!")
-
-    # ── How are you ──
-    if "how are you" in t or "how r u" in t:
-        return "Shishishi! I'm feeling as strong as Gear 5! Ready to answer anything you throw at me nakama!"
-
-    # ── Joke ──
-    if "joke" in t or "funny" in t or "make me laugh" in t:
-        jokes = [
-            "Why do programmers prefer dark mode? Because light attracts bugs — and I hate bugs unless they're Sea Kings! Shishishi!",
-            "Why did the pirate fail math class? Because he kept confusing X with buried treasure! Shishishi!",
-            "How do you organize a pirate party? You planet! No wait... you just say YOHOHOHO!",
-            "Why do Python programmers wear glasses? Because they can't C! Get it? Sea? Like the ocean? Shishishi!",
-            "What did Zoro say when he got lost? ...I meant to go this way. Shishishi!",
-        ]
-        return random.choice(jokes)
-
-    # ── Fact ──
-    if "fact" in t or "did you know" in t or "tell me something" in t:
-        facts = [
-            "Shishishi! Honey never spoils — archaeologists found 3000-year-old honey in Egyptian tombs that was still good!",
-            "A group of flamingos is called a flamboyance! Even cooler than a pirate crew name, nakama!",
-            "Octopuses have THREE hearts and blue blood. Chopper would find that medically fascinating!",
-            "Python was named after Monty Python, not the snake! Though Sea Kings are way cooler than both!",
-            "There are more possible chess games than atoms in the observable universe — even Zoro would get lost calculating that!",
-        ]
-        return random.choice(facts)
-
-    # ── Who are you ──
-    if "who are you" in t or "your name" in t or "what are you" in t:
-        return ("I'm Luffy AI — your AI first mate powered by Google Gemini! "
-                "Just like the real Luffy, I never give up on answering your questions! "
-                "Ask me ANYTHING nakama — science, code, history, math, creative writing — I've got it all!")
-
-    # ── Who made you ──
-    if "who made you" in t or "who built you" in t or "who created you" in t:
-        return ("You built me with Python and Streamlit! That makes you the shipwright — like Franky! SUPER! "
-                "My AI brain is powered by Google Gemini. Together we're an unstoppable crew nakama!")
-
-    # ── Help ──
-    if t in ["help", "what can you do", "commands"] or "what can you" in t:
-        return ("Shishishi! I can answer ANY question with my Gemini AI brain! "
-                "Ask me about science, history, math, coding, creative writing, or just chat! "
-                "I also know the time, date, jokes, and fun facts. Just ask me anything nakama — I never refuse a challenge!")
-
-    # ── Thank you ──
-    if "thank" in t or "thanks" in t or "thx" in t:
-        return "Shishishi! You're welcome nakama! That's what crewmates are for! 🏴‍☠️"
-
-    # ── Reset ──
-    if "reset" in t or "clear" in t or "forget" in t or "new chat" in t:
-        return "RESET_CONVERSATION"
-
-    # ── Everything else → Gemini AI ──
-    return ask_gemini(model, text, history)
-
-
-def get_greeting():
-    h = datetime.datetime.now().hour
-    if 5 <= h < 12:  return "Good morning, nakama"
-    elif 12 <= h < 17: return "Good afternoon, nakama"
-    elif 17 <= h < 21: return "Good evening, nakama"
-    else:              return "Good night, nakama"
-
-
-def format_time():
-    return datetime.datetime.now().strftime("%I:%M %p")
+            return f"Something went wrong. Please try again! (Error: {str(e)[:80]})"
 
 
 # ═══════════════════════════════════════════════════════════
-# STREAMLIT SESSION STATE INIT
+# COMMAND HANDLER — Specific commands first, AI fallback
+# ═══════════════════════════════════════════════════════════
+
+def handle(text: str, model, history: list) -> str:
+    """Routes the user's message to the right handler."""
+    t = text.lower().strip()
+
+    # ── Time (IST) ──────────────────────────────────────────
+    if any(p in t for p in ["what time", "current time", "time now", "time is it", "what's the time"]):
+        n = now_ist()
+        h = n.hour
+        period = "morning" if h < 12 else "afternoon" if h < 17 else "evening" if h < 21 else "night"
+        return f"It's {n.strftime('%I:%M %p')} IST ({period}). Hope your day is going great!"
+
+    # ── Date ────────────────────────────────────────────────
+    if any(p in t for p in ["what date", "today's date", "what day", "today is", "current date"]) or t in ["date", "today"]:
+        n = now_ist()
+        days_map = {"Monday": "Start of the week!", "Friday": "Almost weekend!", "Saturday": "Weekend!", "Sunday": "Sunday funday!"}
+        extra = days_map.get(n.strftime("%A"), "")
+        return f"Today is {n.strftime('%A, %B %d, %Y')}. {extra}"
+
+    # ── Greeting ─────────────────────────────────────────────
+    if t in ["hi", "hello", "hey", "yo", "hiya"] or t.startswith(("hi ", "hello ", "hey ")):
+        return (f"{greeting()}! I'm Luffy AI, your personal assistant with the power of Google Gemini! "
+                f"I can answer any question — science, math, coding, history, creative writing, and much more. What's on your mind?")
+
+    # ── How are you ──────────────────────────────────────────
+    if any(p in t for p in ["how are you", "how r u", "how do you do", "you okay", "you good"]):
+        return "I'm doing great, fully powered up and ready to help! What can I do for you today?"
+
+    # ── Joke ─────────────────────────────────────────────────
+    if any(p in t for p in ["tell me a joke", "joke", "make me laugh", "funny"]):
+        jokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs! 😄",
+            "Why did the developer go broke? Because he used up all his cache!",
+            "How many programmers does it take to change a light bulb? None — that's a hardware problem!",
+            "Why do Python developers wear glasses? Because they can't C!",
+            "A SQL query walks into a bar, walks up to two tables and asks: Can I join you?",
+            "Why was the JavaScript developer sad? Because he didn't Node how to Express himself!",
+            "What's a pirate's favorite programming language? Arrr-duino! 🏴‍☠️",
+        ]
+        return random.choice(jokes)
+
+    # ── Fun fact ─────────────────────────────────────────────
+    if any(p in t for p in ["fun fact", "tell me a fact", "random fact", "did you know", "interesting fact"]):
+        facts = [
+            "Honey never spoils — archaeologists found 3,000-year-old honey in Egyptian tombs that was still perfectly edible!",
+            "A group of flamingos is called a 'flamboyance'. One of the best animal group names ever!",
+            "Octopuses have three hearts, two pump blood to the gills and one pumps it to the rest of the body.",
+            "The first computer bug was a literal bug — an actual moth found trapped in a Harvard computer relay in 1947!",
+            "Python was named after Monty Python's Flying Circus, not the snake.",
+            "There are more possible iterations of a game of chess than there are atoms in the observable universe.",
+            "Bananas are technically berries, but strawberries are not actually berries botanically.",
+            "The human brain uses about 20% of the body's total energy despite being only 2% of body weight.",
+        ]
+        return random.choice(facts)
+
+    # ── Who are you ──────────────────────────────────────────
+    if any(p in t for p in ["who are you", "what are you", "your name", "introduce yourself", "about you"]):
+        return (
+            "I'm Luffy AI — a powerful AI assistant built with Python and Google Gemini! "
+            "I can answer virtually any question you throw at me: science, history, math, coding, "
+            "creative writing, analysis, and much more. "
+            "Think of me as your personal AI first mate, always ready to help. What would you like to know?"
+        )
+
+    # ── Who made you ─────────────────────────────────────────
+    if any(p in t for p in ["who made you", "who built you", "who created you", "who made this"]):
+        return (
+            "I was built using Python and Streamlit by you! "
+            "My intelligence comes from Google Gemini AI. "
+            "It's a great project — you should be proud of building this!"
+        )
+
+    # ── Thank you ────────────────────────────────────────────
+    if any(p in t for p in ["thank you", "thanks", "thx", "ty", "thank u"]):
+        return "You're welcome! Happy to help anytime. Feel free to ask me anything else!"
+
+    # ── Help / capabilities ──────────────────────────────────
+    if any(p in t for p in ["help", "what can you do", "capabilities", "commands", "features"]):
+        return (
+            "I can help you with almost anything! Here's what I'm great at: "
+            "Answering general knowledge questions, explaining complex topics simply, "
+            "helping with math and calculations, writing and debugging code, "
+            "creative writing and storytelling, giving advice and suggestions, "
+            "current time and date in IST, jokes, fun facts, and much more. "
+            "Just ask me anything and I'll do my best to help!"
+        )
+
+    # ── Clear ────────────────────────────────────────────────
+    if any(p in t for p in ["clear", "reset", "new chat", "start over", "forget"]):
+        return "CLEAR_CHAT"
+
+    # ── Goodbye ──────────────────────────────────────────────
+    if any(p in t for p in ["bye", "goodbye", "see you", "later", "exit"]):
+        return "Goodbye! It was great chatting with you. Come back anytime you need help! 🏴‍☠️"
+
+    # ── Everything else → Gemini AI ──────────────────────────
+    return ask_ai(model, text, history)
+
+
+# ═══════════════════════════════════════════════════════════
+# SESSION STATE INIT
 # ═══════════════════════════════════════════════════════════
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "msg_count" not in st.session_state:
     st.session_state.msg_count = 0
 
-if "input_key" not in st.session_state:
-    st.session_state.input_key = 0
-
-if "pending_input" not in st.session_state:
-    st.session_state.pending_input = ""
-
-
-# ═══════════════════════════════════════════════════════════
-# SETUP GEMINI
-# ═══════════════════════════════════════════════════════════
-
 api_key = get_api_key()
-model   = setup_gemini(api_key)
+model   = load_model(api_key)
 
 
 # ═══════════════════════════════════════════════════════════
 # HEADER
 # ═══════════════════════════════════════════════════════════
 
-st.markdown("""
+st.markdown(f"""
 <div class="luffy-header">
-    <span class="straw-hat-icon">🎩</span>
-    <h1 class="luffy-title">LUFFY AI</h1>
-    <p class="luffy-subtitle">Your AI First Mate · Powered by Gemini</p>
-    <span class="nakama-badge">🏴‍☠️ Straw Hat Crew AI · Always Ready</span>
+    <span class="hat-icon">🎩</span>
+    <div class="main-title">LUFFY AI</div>
+    <div class="sub-title">Your Personal AI Assistant · One Piece Edition</div>
+    <span class="status-badge {'connected' if api_key else 'disconnected'}">
+        {'✅ Gemini AI Online — Ask Me Anything!' if api_key else '❌ API Key Missing — Setup Required'}
+    </span>
 </div>
-<div class="pirate-divider">⚓ ✦ ⚓ ✦ ⚓</div>
+<div class="divider">⚓ ✦ ⚓ ✦ ⚓</div>
 """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════
-# API KEY WARNING (if missing)
-# ═══════════════════════════════════════════════════════════
-
+# ── API Warning ───────────────────────────────────────────
 if not api_key:
     st.markdown("""
-    <div class="api-banner">
-        ⚠️ <strong>No API Key Detected!</strong>
-        Luffy needs his Gemini Devil Fruit powers!<br>
-        Go to <strong>Streamlit → Settings → Secrets</strong> and add:<br>
-        <code style="background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:4px; color:#ffd60a;">
-        GEMINI_API_KEY = "your-key-here"</code><br>
+    <div class="api-warn">
+        ⚠️ <strong>Gemini API Key Not Found!</strong><br>
+        Go to <strong>Streamlit → Manage App → Settings → Secrets</strong> and add:<br>
+        <code>GEMINI_API_KEY = "your-key-here"</code><br>
         Get your FREE key at
         <a href="https://aistudio.google.com/app/apikey" target="_blank">
-        aistudio.google.com/app/apikey</a>
-        — takes 60 seconds! 🏴‍☠️
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    # Connected badge
-    st.markdown("""
-    <div style="text-align:center; margin-bottom:16px;">
-        <span style="background:rgba(52,168,83,0.15); border:1px solid rgba(52,168,83,0.4);
-                     border-radius:20px; padding:5px 16px; font-size:12px;
-                     color:#4ade80; font-weight:700; letter-spacing:1px;">
-            ✅ GEMINI AI CONNECTED — ASK ME ANYTHING!
-        </span>
+            aistudio.google.com/app/apikey
+        </a> — takes under 60 seconds!
     </div>
     """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════
-# STATS BAR
-# ═══════════════════════════════════════════════════════════
-
+# ── Stats bar ─────────────────────────────────────────────
+n = now_ist()
 st.markdown(f"""
-<div class="stats-bar">
-    <div class="stat-item">
-        <div class="stat-value">{st.session_state.msg_count}</div>
-        <div class="stat-label">Messages</div>
+<div class="stats-row">
+    <div class="stat-cell">
+        <span class="stat-val">{st.session_state.msg_count}</span>
+        <span class="stat-lbl">Messages</span>
     </div>
-    <div class="stat-item">
-        <div class="stat-value">{'✅' if api_key else '❌'}</div>
-        <div class="stat-label">AI Status</div>
+    <div class="stat-cell">
+        <span class="stat-val">{'✅' if api_key else '❌'}</span>
+        <span class="stat-lbl">AI Status</span>
     </div>
-    <div class="stat-item">
-        <div class="stat-value">{format_time()}</div>
-        <div class="stat-label">Ship Time</div>
+    <div class="stat-cell">
+        <span class="stat-val">{n.strftime('%I:%M %p')}</span>
+        <span class="stat-lbl">IST Time</span>
     </div>
-    <div class="stat-item">
-        <div class="stat-value">∞</div>
-        <div class="stat-label">Questions</div>
+    <div class="stat-cell">
+        <span class="stat-val">{n.strftime('%d %b')}</span>
+        <span class="stat-lbl">Date</span>
+    </div>
+    <div class="stat-cell">
+        <span class="stat-val">∞</span>
+        <span class="stat-lbl">Questions</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════
-# CHAT DISPLAY
+# CHAT HISTORY — using st.chat_message (NO raw HTML bugs!)
 # ═══════════════════════════════════════════════════════════
 
-# Build chat HTML
-chat_html = '<div class="chat-area" id="chatArea">'
-
+# Welcome message on first load
 if not st.session_state.messages:
-    # Welcome message
-    now_str = format_time()
-    greeting = get_greeting()
-    welcome = (f"Shishishi! {greeting}! I'm Luffy, your AI first mate! "
-               f"I'm powered by Google Gemini, so I can answer ANYTHING you ask — "
-               f"science, math, code, history, creative writing, you name it! "
-               f"Let's set sail nakama! 🏴‍☠️")
-    chat_html += f"""
-    <div class="msg-row">
-        <div class="avatar luffy-av">🎩</div>
-        <div class="bubble-wrap">
-            <div class="sender-name luffy-name">LUFFY AI</div>
-            <div class="bubble luffy-bubble">{welcome}</div>
-            <div class="timestamp">{now_str}</div>
-        </div>
-    </div>
-    """
+    welcome = (
+        f"{greeting()}! I'm Luffy AI, your personal AI assistant powered by Google Gemini. "
+        f"I can answer questions on any topic — science, math, coding, history, creative writing, and more. "
+        f"The current time in India is {n.strftime('%I:%M %p IST')}. "
+        f"What would you like to know today?"
+    )
+    with st.chat_message("assistant", avatar="🎩"):
+        st.write(welcome)
 
+# Display chat history
 for msg in st.session_state.messages:
-    if msg["role"] == "system":
-        chat_html += f'<div class="sys-msg">{msg["content"]}</div>'
-    elif msg["role"] == "luffy":
-        chat_html += f"""
-        <div class="msg-row">
-            <div class="avatar luffy-av">🎩</div>
-            <div class="bubble-wrap">
-                <div class="sender-name luffy-name">LUFFY AI</div>
-                <div class="bubble luffy-bubble">{msg["content"]}</div>
-                <div class="timestamp">{msg.get("time", "")}</div>
-            </div>
-        </div>
-        """
-    elif msg["role"] == "user":
-        chat_html += f"""
-        <div class="msg-row user">
-            <div class="avatar user-av">👤</div>
-            <div class="bubble-wrap">
-                <div class="sender-name user-name-label">YOU</div>
-                <div class="bubble user-bubble">{msg["content"]}</div>
-                <div class="timestamp">{msg.get("time", "")}</div>
-            </div>
-        </div>
-        """
-
-chat_html += "</div>"
-
-# Auto-scroll JS
-chat_html += """
-<script>
-    setTimeout(function() {
-        var el = document.getElementById('chatArea');
-        if (el) el.scrollTop = el.scrollHeight;
-    }, 100);
-</script>
-"""
-
-st.markdown(chat_html, unsafe_allow_html=True)
+    role   = msg["role"]      # "user" or "assistant"
+    avatar = "🎩" if role == "assistant" else "👤"
+    with st.chat_message(role, avatar=avatar):
+        st.write(msg["content"])
+        if msg.get("time"):
+            st.caption(msg["time"])
 
 
 # ═══════════════════════════════════════════════════════════
 # QUICK COMMAND BUTTONS
 # ═══════════════════════════════════════════════════════════
 
-st.markdown('<p class="quick-title">⚡ Quick Commands</p>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#8899aa; font-size:11px; letter-spacing:2px; text-transform:uppercase; font-weight:700; margin: 12px 0 8px 0;">⚡ Quick Commands</p>', unsafe_allow_html=True)
 
-quick_commands = [
-    "What time is it?", "Tell me a joke", "Fun fact",
-    "What can you do?", "Explain Python", "What is AI?",
+quick = [
+    "What time is it?",
+    "Tell me a joke",
+    "Fun fact",
+    "What can you do?",
+    "Explain Python",
+    "What is AI?",
 ]
 
-cols = st.columns(len(quick_commands))
-for i, cmd in enumerate(quick_commands):
+cols = st.columns(len(quick))
+triggered = None
+for i, cmd in enumerate(quick):
     with cols[i]:
-        if st.button(cmd, key=f"quick_{i}"):
-            st.session_state.pending_input = cmd
+        if st.button(cmd, key=f"q{i}"):
+            triggered = cmd
 
 
 # ═══════════════════════════════════════════════════════════
-# INPUT AREA
+# CHAT INPUT — st.chat_input (proper Streamlit component)
 # ═══════════════════════════════════════════════════════════
 
-st.markdown('<div class="input-section">', unsafe_allow_html=True)
+user_input = st.chat_input("Ask me anything... 🏴‍☠️")
 
-col_in, col_btn = st.columns([5, 1])
-
-with col_in:
-    user_text = st.text_input(
-        label="msg",
-        placeholder="Ask me anything, nakama... 🏴‍☠️",
-        label_visibility="collapsed",
-        key=f"chat_input_{st.session_state.input_key}",
-        value=st.session_state.pending_input
-    )
-
-with col_btn:
-    send_clicked = st.button("SEND ➤", key="send_btn")
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Clear button row
-c1, c2, c3 = st.columns([3, 2, 3])
-with c2:
-    if st.button("🗑️ Clear Voyage Log", key="clear_btn"):
-        st.session_state.messages = []
-        st.session_state.msg_count = 0
-        st.session_state.input_key += 1
-        st.session_state.pending_input = ""
-        st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════
-# PROCESS INPUT
-# ═══════════════════════════════════════════════════════════
-
-# Determine what to process
-to_process = ""
-if send_clicked and user_text and user_text.strip():
-    to_process = user_text.strip()
-elif st.session_state.pending_input and not send_clicked:
-    to_process = st.session_state.pending_input
+# Use quick button if clicked, otherwise use typed input
+to_process = triggered or user_input
 
 if to_process:
-    # Reset pending
-    st.session_state.pending_input = ""
+    ts = now_ist().strftime("%I:%M %p IST")
 
-    # Add user message
-    ts = datetime.datetime.now().strftime("%I:%M %p")
+    # Show user message immediately
+    with st.chat_message("user", avatar="👤"):
+        st.write(to_process)
+
+    # Save user message
     st.session_state.messages.append({
-        "role": "user",
+        "role":    "user",
         "content": to_process,
-        "time": ts
+        "time":    ts
     })
     st.session_state.msg_count += 1
 
-    # Get Luffy's response
-    with st.spinner("🏴‍☠️ Luffy is powering up..."):
-        response = handle_command_web(
-            to_process,
-            model,
-            st.session_state.messages
-        )
+    # Get response
+    with st.chat_message("assistant", avatar="🎩"):
+        with st.spinner("Thinking..."):
+            response = handle(to_process, model, st.session_state.messages)
 
-    # Handle reset command
-    if response == "RESET_CONVERSATION":
-        st.session_state.messages = [{
-            "role": "system",
-            "content": "⚓ Voyage log cleared — new adventure begins!"
-        }]
+        if response == "CLEAR_CHAT":
+            st.session_state.messages = []
+            st.session_state.msg_count = 0
+            st.write("Chat cleared! Ready for a fresh start. What would you like to know?")
+            st.rerun()
+        else:
+            st.write(response)
+            st.caption(ts)
+
+    # Save assistant message
+    if response != "CLEAR_CHAT":
         st.session_state.messages.append({
-            "role": "luffy",
-            "content": "Shishishi! Memory cleared! Fresh start — what's our next adventure nakama?",
-            "time": ts
-        })
-        st.session_state.msg_count = 1
-    else:
-        st.session_state.messages.append({
-            "role": "luffy",
+            "role":    "assistant",
             "content": response,
-            "time": ts
+            "time":    ts
         })
         st.session_state.msg_count += 1
 
-    # Clear input and rerun
-    st.session_state.input_key += 1
-    st.rerun()
+
+# ── Clear button ──────────────────────────────────────────
+st.markdown("")
+c1, c2, c3 = st.columns([3, 2, 3])
+with c2:
+    with st.container():
+        st.markdown('<div class="clear-btn">', unsafe_allow_html=True)
+        if st.button("🗑️ Clear Chat", key="clear"):
+            st.session_state.messages = []
+            st.session_state.msg_count = 0
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════
-# FOOTER
-# ═══════════════════════════════════════════════════════════
-
+# ── Footer ────────────────────────────────────────────────
 st.markdown("""
-<div class="pirate-divider" style="margin-top:8px;">⚓ ✦ ⚓ ✦ ⚓</div>
-<div class="pirate-footer">
-    🏴‍☠️ Built with Python · Streamlit · Google Gemini AI<br>
-    <span style="color:#ffd60a; font-weight:700;">"I'm gonna be King of the Pirates — AND the best AI assistant!"</span>
-    — Luffy AI
+<div class="divider" style="margin-top:16px;">⚓ ✦ ⚓ ✦ ⚓</div>
+<div class="footer">
+    Built with Python · Streamlit · Google Gemini AI<br>
+    <strong>"I'm going to be the greatest AI assistant!" — Luffy AI 🏴‍☠️</strong>
 </div>
 """, unsafe_allow_html=True)

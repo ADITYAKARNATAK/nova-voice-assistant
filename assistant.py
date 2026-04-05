@@ -1,204 +1,142 @@
 # ============================================================
-#
-#   🏴‍☠️  LUFFY AI — TERMINAL VERSION  🏴‍☠️
-#   Your AI First Mate — Powered by Gemini
-#   One Piece themed Voice + Text Assistant
-#
+#  assistant.py — Luffy AI Terminal Version
+#  Voice + Text · Indian Standard Time
 # ============================================================
 
 from datetime import datetime
-import time, os
+import time, os, pytz
 import speech_recognition as sr
 import pyttsx3
-
 from utils    import (tell_time, tell_date, greet_user, tell_joke,
                       tell_weather, tell_fact, system_status, get_greeting)
 from websites import open_website, open_app, handle_search
 from ai_brain import ask_luffy, reset_conversation
 
+IST            = pytz.timezone("Asia/Kolkata")
 ASSISTANT_NAME = "Luffy"
 LANGUAGE       = "en-in"
-SPEECH_RATE    = 160
+SPEECH_RATE    = 155
 LISTEN_TIMEOUT = 5
 MAX_RETRIES    = 3
-MAX_SILENCE    = 3
 
 
 def create_engine():
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
-    try:
-        engine.setProperty('voice', voices[1].id)
-    except IndexError:
-        engine.setProperty('voice', voices[0].id)
+    try:    engine.setProperty('voice', voices[1].id)
+    except: engine.setProperty('voice', voices[0].id)
     engine.setProperty('rate', SPEECH_RATE)
     engine.setProperty('volume', 1.0)
     return engine
 
-
 def speak(text):
-    print(f"\n  {'─'*50}")
-    print(f"  🏴‍☠️  {ASSISTANT_NAME}: {text}")
-    print(f"  {'─'*50}")
+    print(f"\n  {'─'*52}\n  🏴‍☠️  {ASSISTANT_NAME}: {text}\n  {'─'*52}")
     try:
-        engine = create_engine()
-        engine.say(text)
-        engine.runAndWait()
-    except Exception:
-        pass
+        e = create_engine(); e.say(text); e.runAndWait()
+    except: pass
     time.sleep(0.3)
 
-
 def listen():
-    recognizer = sr.Recognizer()
+    rec = sr.Recognizer()
     for attempt in range(1, MAX_RETRIES + 1):
-        with sr.Microphone() as source:
-            print(f"\n  {'═'*50}")
-            print(f"  🎤  {ASSISTANT_NAME} is Listening..." +
-                  (f" (Attempt {attempt}/{MAX_RETRIES})" if attempt > 1 else ""))
-            print(f"  {'═'*50}")
-            recognizer.adjust_for_ambient_noise(source, duration=1)
+        with sr.Microphone() as src:
+            print(f"\n  {'═'*52}")
+            print(f"  🎤  Listening..." + (f" (Attempt {attempt}/{MAX_RETRIES})" if attempt > 1 else ""))
+            print(f"  {'═'*52}")
+            rec.adjust_for_ambient_noise(src, duration=1)
             try:
-                audio = recognizer.listen(source, timeout=LISTEN_TIMEOUT, phrase_time_limit=10)
+                audio = rec.listen(src, timeout=LISTEN_TIMEOUT, phrase_time_limit=10)
                 print("  ⏳ Processing...")
-                text = recognizer.recognize_google(audio, language=LANGUAGE).lower().strip()
+                text = rec.recognize_google(audio, language=LANGUAGE).lower().strip()
                 print(f"  ✅ Heard: '{text}'")
                 return text
             except sr.UnknownValueError:
                 print("  ❌ Could not understand.")
-                if attempt == MAX_RETRIES:
-                    speak("Shishishi! I couldn't catch that. Say it again nakama!")
+                if attempt == MAX_RETRIES: speak("I couldn't understand that. Could you say it again?")
             except sr.RequestError:
-                speak("Network error! Check your internet, nakama!")
+                speak("Network error. Please check your internet connection.")
                 return None
             except sr.WaitTimeoutError:
-                print("  ⏰ No speech detected.")
-                if attempt == MAX_RETRIES:
-                    speak("I didn't hear you! Try again nakama!")
+                print("  ⏰ No speech.")
+                if attempt == MAX_RETRIES: speak("I didn't hear anything. Please try again.")
             except Exception as e:
-                print(f"  ⚠️ Error: {e}")
-                return None
+                print(f"  ⚠️ {e}"); return None
             time.sleep(0.3)
     return None
 
-
 def handle_command(text):
-    if text is None:
-        return True
+    if not text: return True
+    s = lambda m: speak(m)
+    t = text.lower()
 
-    def speak_fn(msg):
-        speak(msg)
-
-    exit_words = ["exit", "quit", "bye", "goodbye", "stop", "see you"]
-    if any(w in text for w in exit_words):
-        speak("Shishishi! Bye nakama! I'll become King of the Pirates — AND the best AI assistant!")
+    if any(w in t for w in ["exit","quit","bye","goodbye","stop"]):
+        speak("Goodbye! Come back anytime. Let's go! 🏴‍☠️")
         return False
 
-    matched, _ = open_website(text, speak_fn)
+    matched, _ = open_website(t, s)
     if matched: return True
-    matched, _ = open_app(text, speak_fn)
+    matched, _ = open_app(t, s)
     if matched: return True
-    matched, _ = handle_search(text, speak_fn)
+    matched, _ = handle_search(t, s)
     if matched: return True
 
-    if "time" in text:
-        tell_time(speak_fn)
-    elif "date" in text or "today" in text:
-        tell_date(speak_fn)
-    elif "weather" in text:
-        tell_weather(text, speak_fn)
-    elif any(w in text for w in ["hello", "hi", "hey"]):
-        greet_user(speak_fn)
-    elif "how are you" in text:
-        speak("Shishishi! I'm doing amazing! Strong as ever! How can I help you nakama?")
-    elif "your name" in text or "who are you" in text:
-        speak("I'm Luffy! Your AI first mate! I'm gonna be King of the Pirates AND answer all your questions!")
-    elif "joke" in text:
-        tell_joke(speak_fn)
-    elif "fact" in text:
-        tell_fact(speak_fn)
-    elif "status" in text or "are you there" in text:
-        system_status(speak_fn)
-    elif "reset" in text or "forget" in text or "clear memory" in text:
-        msg = reset_conversation()
-        speak(msg)
-    elif "who made you" in text or "who built you" in text:
-        speak("You built me with Python and Gemini AI! That makes you the shipwright — like Franky! SUPER!")
-    elif "thank" in text:
-        speak("Shishishi! You're welcome nakama! That's what crewmates are for!")
-    elif "help" in text or "what can you do" in text:
-        speak("I can answer ANY question with my Gemini AI brain, tell the time and date, "
-              "open websites and apps, search Google and YouTube, check weather, "
-              "tell jokes and facts! Just ask me anything nakama!")
+    if "time" in t:                                      tell_time(s)
+    elif "date" in t or "today" in t:                   tell_date(s)
+    elif "weather" in t:                                 tell_weather(t, s)
+    elif any(w in t for w in ["hello","hi","hey"]):      greet_user(s)
+    elif "how are you" in t:                             speak("I'm doing great! Fully powered up. How can I help?")
+    elif "your name" in t or "who are you" in t:         speak("I'm Luffy AI — your personal AI assistant powered by Gemini! Ask me anything.")
+    elif "joke" in t:                                    tell_joke(s)
+    elif "fact" in t:                                    tell_fact(s)
+    elif "status" in t:                                  system_status(s)
+    elif "reset" in t or "clear" in t:                   speak(reset_conversation())
+    elif "who made you" in t or "who built you" in t:    speak("You built me with Python and Gemini AI! Great work!")
+    elif "thank" in t:                                   speak("You're welcome! Happy to help anytime.")
+    elif "help" in t or "what can you do" in t:
+        speak("I can answer any question, tell the time and date in IST, "
+              "open websites and apps, search the web, tell jokes and facts. Just ask!")
     else:
-        # AI fallback — ask Gemini
         print(f"  🧠 Asking Gemini AI...")
-        response = ask_luffy(text)
-        speak(response)
+        speak(ask_luffy(text))
 
     return True
 
-
 def show_banner():
     os.system('cls' if os.name == 'nt' else 'clear')
-    now = datetime.now()
+    n = datetime.now(IST)
     print("\n")
-    print("  ╔══════════════════════════════════════════════════╗")
-    print("  ║                                                  ║")
-    print("  ║         🏴‍☠️   LUFFY AI ASSISTANT   🏴‍☠️           ║")
-    print("  ║                                                  ║")
-    print("  ║    ⠀⠀⠀⠀🎩  Straw Hat Crew AI  🎩⠀⠀⠀⠀         ║")
-    print("  ║         Powered by Gemini + Python               ║")
-    print("  ║                                                  ║")
-    print(f"  ║   📅  {now.strftime('%A, %B %d %Y'):<42}║")
-    print(f"  ║   🕐  {now.strftime('%I:%M %p'):<42}║")
-    print("  ╠══════════════════════════════════════════════════╣")
-    print("  ║                                                  ║")
-    print("  ║   💬  COMMANDS (or just ask ANYTHING!):          ║")
-    print("  ║                                                  ║")
-    print("  ║   • hello / hi              • what's the time   ║")
-    print("  ║   • what's the date         • weather in [city] ║")
-    print("  ║   • open google/youtube/... • open notepad/...  ║")
-    print("  ║   • search for [anything]   • tell me a joke    ║")
-    print("  ║   • tell me a fact          • clear memory      ║")
-    print("  ║   • ANY QUESTION → Gemini AI answers it!        ║")
-    print("  ║   • exit / bye                                   ║")
-    print("  ║                                                  ║")
-    print("  ╚══════════════════════════════════════════════════╝")
-    print()
-
+    print("  ╔════════════════════════════════════════════════════╗")
+    print("  ║                                                    ║")
+    print("  ║      🎩  LUFFY AI — TERMINAL ASSISTANT  🎩        ║")
+    print("  ║         Powered by Python + Google Gemini          ║")
+    print("  ║                                                    ║")
+    print(f"  ║   📅  {n.strftime('%A, %B %d, %Y'):<44}║")
+    print(f"  ║   🕐  {n.strftime('%I:%M %p IST'):<44}║")
+    print("  ╠════════════════════════════════════════════════════╣")
+    print("  ║   Say anything — Gemini AI answers it all!         ║")
+    print("  ║   hello · time · date · weather in [city]          ║")
+    print("  ║   open [site/app] · search for [anything]          ║")
+    print("  ║   joke · fact · help · bye                         ║")
+    print("  ╚════════════════════════════════════════════════════╝\n")
 
 def main():
     show_banner()
-    greeting = get_greeting()
-    speak(f"{greeting}! I'm Luffy, your AI first mate! "
-          f"Ask me ANYTHING — I've got Gemini AI powers! "
-          f"Let's set sail nakama!")
-
-    silence_count = 0
-
+    speak(f"{get_greeting()}! I'm Luffy AI, your personal assistant. Ask me anything!")
+    silence = 0
     while True:
-        user_input = listen()
-
-        if user_input is None:
-            silence_count += 1
-            if silence_count >= MAX_SILENCE:
-                speak("Shishishi! You still there nakama? I'm here whenever you need me!")
-                silence_count = 0
+        inp = listen()
+        if inp is None:
+            silence += 1
+            if silence >= 3:
+                speak("Still there? I'm ready whenever you are!")
+                silence = 0
             time.sleep(1)
             continue
-
-        silence_count = 0
-        keep_running = handle_command(user_input)
-
-        if not keep_running:
-            print("\n  ╔══════════════════════════════════════╗")
-            print(f"  ║  🏴‍☠️  {ASSISTANT_NAME} has set sail. Farewell!  ║")
-            print("  ╚══════════════════════════════════════╝\n")
+        silence = 0
+        if not handle_command(inp):
+            print("\n  🏴‍☠️  Luffy AI has shut down. Goodbye!\n")
             break
-
         time.sleep(1)
-
 
 if __name__ == "__main__":
     main()
