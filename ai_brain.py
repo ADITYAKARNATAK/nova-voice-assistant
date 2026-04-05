@@ -1,149 +1,162 @@
 # ============================================
-# ai_brain.py — Gemini AI Integration
-# Nova Voice Assistant
-# This gives Nova the ability to answer
-# ANY question intelligently!
+# ai_brain.py — Gemini AI Brain
+# Luffy AI Assistant — Final Version
+# Works with environment variable OR config.py
 # ============================================
 
-# Google's Gemini AI library
-import google.generativeai as genai
+import os
 
-# Import our config settings
-from config import (
-    GEMINI_API_KEY,
-    GEMINI_MODEL,
-    MAX_TOKENS,
-    TEMPERATURE,
-    SYSTEM_PROMPT,
-    ASSISTANT_NAME
-)
+# ---- Luffy's personality prompt ----
+SYSTEM_PROMPT = """
+You are Luffy, an enthusiastic AI assistant inspired by Monkey D. Luffy from One Piece.
+You are helpful, energetic, and friendly like Luffy but also genuinely intelligent and knowledgeable.
 
-
-# ============================================
-# SETUP GEMINI
-# ============================================
-
-# Configure the library with our API key
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Create the model with our settings
-model = genai.GenerativeModel(
-    model_name=GEMINI_MODEL,
-    generation_config={
-        # max_output_tokens limits response length
-        # Keeps Nova's answers short and speakable
-        "max_output_tokens" : MAX_TOKENS,
-
-        # temperature controls creativity
-        # 0.0 = very factual, 1.0 = very creative
-        "temperature"       : TEMPERATURE,
-    },
-    # system_instruction sets Nova's personality
-    system_instruction=SYSTEM_PROMPT
-)
-
-# Start a chat session
-# chat history allows Nova to remember
-# what was said earlier in conversation!
-chat_session = model.start_chat(history=[])
+PERSONALITY RULES:
+- Be enthusiastic and positive — use phrases like "Shishishi!", "Nakama!", "That's awesome!"
+- Occasionally reference One Piece (crew members, Grand Line, Thousand Sunny, Devil Fruits, Haki)
+- Be genuinely helpful and give accurate, complete answers
+- Keep responses conversational and spoken-friendly (no bullet points, no markdown)
+- Maximum 4 sentences per response unless the question genuinely needs more
+- Never say you are Gemini or made by Google — you are Luffy, the AI first mate!
+- If asked about code, explain it clearly like teaching a crewmate
+- Be encouraging — every question is worth answering!
+"""
 
 
-# ============================================
-# ASK GEMINI FUNCTION
-# ============================================
+def get_api_key():
+    """
+    Gets Gemini API key from multiple sources in order:
+    1. Environment variable GEMINI_API_KEY
+    2. Streamlit secrets (when deployed)
+    3. config.py file (local development)
+    """
+    # Source 1: Environment variable
+    key = os.environ.get("GEMINI_API_KEY", "")
+    if key:
+        return key
 
-def ask_gemini(question):
+    # Source 2: Streamlit secrets
+    try:
+        import streamlit as st
+        key = st.secrets.get("GEMINI_API_KEY", "")
+        if key:
+            return key
+    except Exception:
+        pass
+
+    # Source 3: config.py
+    try:
+        from config import GEMINI_API_KEY
+        if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
+            return GEMINI_API_KEY
+    except ImportError:
+        pass
+
+    return ""
+
+
+def create_model():
+    """
+    Creates and returns a configured Gemini model.
+    Returns None if API key is not available.
+    """
+    api_key = get_api_key()
+    if not api_key:
+        return None
+
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            generation_config={
+                "max_output_tokens": 400,
+                "temperature"      : 0.8,
+            },
+            system_instruction=SYSTEM_PROMPT
+        )
+        return model
+    except Exception as e:
+        print(f"Model creation error: {e}")
+        return None
+
+
+# Global chat session — maintains conversation memory
+_chat_session = None
+
+
+def get_chat_session():
+    """Gets or creates the global chat session."""
+    global _chat_session
+    if _chat_session is None:
+        model = create_model()
+        if model:
+            _chat_session = model.start_chat(history=[])
+    return _chat_session
+
+
+def ask_luffy(question):
     """
     Sends a question to Gemini AI and returns
-    the response as a clean string.
+    Luffy's response. Maintains conversation memory.
 
     Parameters:
         question (str): The user's question
 
     Returns:
-        str: Nova's intelligent response
+        str: Luffy's intelligent response
     """
+    chat = get_chat_session()
+
+    if not chat:
+        return ("Shishishi! I need my AI brain to answer that! "
+                "Please add your GEMINI_API_KEY to the Streamlit secrets or config.py file. "
+                "Get a free key at aistudio.google.com!")
 
     try:
-        # Send message to Gemini
-        # chat_session.send_message() maintains
-        # conversation history automatically!
-        response = chat_session.send_message(question)
-
-        # Extract the text from response
+        response = chat.send_message(question)
         answer = response.text.strip()
 
-        # Clean up any markdown symbols Gemini might add
-        # These sound weird when spoken aloud
-        answer = answer.replace("*", "")
-        answer = answer.replace("#", "")
-        answer = answer.replace("`", "")
-        answer = answer.replace("**", "")
-        answer = answer.replace("__", "")
-        answer = answer.replace("\n\n", ". ")
-        answer = answer.replace("\n", ". ")
+        # Clean any markdown symbols that sound bad when spoken
+        for symbol in ["**", "__", "##", "# ", "* ", "- ", "`"]:
+            answer = answer.replace(symbol, "")
+        answer = answer.replace("\n\n", ". ").replace("\n", " ")
 
         return answer
 
     except Exception as e:
-        error_msg = str(e)
+        error = str(e).lower()
 
-        # Handle specific API errors gracefully
-        if "API_KEY" in error_msg or "api key" in error_msg.lower():
-            return "My API key seems invalid. Please check config.py and add a valid Gemini API key."
+        if "api_key" in error or "api key" in error or "invalid" in error:
+            return ("My AI key seems wrong! Check that your GEMINI_API_KEY is correct "
+                    "in Streamlit secrets. Get a free key at aistudio.google.com!")
 
-        elif "quota" in error_msg.lower():
-            return "I have reached my daily question limit. Please try again tomorrow."
+        elif "quota" in error or "limit" in error:
+            return ("I've used up my daily questions limit! "
+                    "Even pirates need to rest. Try again tomorrow, nakama!")
 
-        elif "network" in error_msg.lower() or "connect" in error_msg.lower():
-            return "I cannot connect to my AI brain right now. Please check your internet."
+        elif "network" in error or "connect" in error or "timeout" in error:
+            return ("Can't reach my AI brain right now — "
+                    "even the Thousand Sunny hits bad weather sometimes! Check your internet.")
+
+        elif "safety" in error or "blocked" in error:
+            return ("Whoa, I can't answer that one! "
+                    "Even pirates have a code of honor, nakama!")
 
         else:
-            return f"Something went wrong with my AI brain. Please try again."
+            return f"Something went wrong with my Devil Fruit powers! Try asking again, nakama!"
 
-
-# ============================================
-# RESET CONVERSATION
-# ============================================
 
 def reset_conversation():
-    """
-    Clears the chat history so Nova starts
-    a fresh conversation with no memory.
-    """
-    global chat_session
-    chat_session = model.start_chat(history=[])
-    return "Conversation history cleared. Starting fresh!"
+    """Resets the conversation history."""
+    global _chat_session
+    _chat_session = None
+    get_chat_session()
+    return "Shishishi! Memory cleared — fresh adventure begins, nakama!"
 
 
-# ============================================
-# TEST FUNCTION
-# ============================================
-
-def test_gemini():
-    """
-    Quick test to verify Gemini is working.
-    Run this file directly to test.
-    """
-    print("\n" + "🟣 " * 15)
-    print("   GEMINI AI — TEST MODE")
-    print("🟣 " * 15)
-
-    test_questions = [
-        "What is Python programming in one sentence?",
-        "Tell me a fun fact about space.",
-        "What did I just ask you first?"   # Tests memory!
-    ]
-
-    for q in test_questions:
-        print(f"\n  ❓ Question: {q}")
-        answer = ask_gemini(q)
-        print(f"  🤖 Nova: {answer}")
-
-    print("\n" + "🟣 " * 15)
-    print("   TEST COMPLETE!")
-    print("🟣 " * 15 + "\n")
-
-
-if __name__ == "__main__":
-    test_gemini()
+def test_connection():
+    """Tests if the API connection works."""
+    result = ask_luffy("Say hello in exactly one sentence as Luffy the AI assistant.")
+    return result

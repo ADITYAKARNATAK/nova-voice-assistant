@@ -1,116 +1,92 @@
-# 🤖 Nova — Personal AI Voice Assistant
+# 🏴‍☠️ Luffy AI — Your Pirate AI Assistant
 
-
+> One Piece themed AI Assistant powered by Google Gemini + Python
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Live Demo
+Deploy on Streamlit Cloud for FREE → See deployment steps below
 
-### 1. Create & Activate Virtual Environment
+---
+
+## ⚡ Quick Start
+
+### Web Version (Streamlit)
 ```bash
-python -m venv venv --without-pip
+pip install streamlit google-generativeai
+streamlit run app.py
+```
+
+### Terminal Version (with voice)
+```bash
+# Activate venv first
 venv\Scripts\activate
-python -m ensurepip
-python -m pip install --upgrade pip
-```
 
-### 2. Install Dependencies
-```bash
-pip install speechrecognition pyttsx3 pyaudio
-```
-> If pyaudio fails: `pip install pipwin` then `pipwin install pyaudio`
+# Install all deps
+pip install speechrecognition pyttsx3 pyaudio google-generativeai
 
-### 3. Run Nova
+# Create config.py from template
+copy config.example.py config.py
+# Add your API key to config.py
 
-**GUI Mode (Recommended — Gemini Style):**
-```bash
-python nova_gui.py
-```
-
-**Terminal Mode:**
-```bash
+# Run
 python assistant.py
 ```
 
 ---
 
-## 💬 Voice Commands
+## 🔑 Get FREE Gemini API Key
+1. Go to https://aistudio.google.com/app/apikey
+2. Sign in with Google
+3. Click "Create API Key"
+4. Copy it!
 
-| Command | What Nova Does |
+---
+
+## ☁️ Deploy to Streamlit Cloud
+1. Push to GitHub
+2. Go to https://streamlit.io/cloud
+3. Connect your repo → set `app.py` as main file
+4. Go to **Settings → Secrets** and add:
+```toml
+GEMINI_API_KEY = "your-actual-key-here"
+```
+5. Deploy! 🎉
+
+---
+
+## 💬 What Luffy Can Do
+
+| Say This | Luffy Does |
 |---|---|
-| `hello / hi / hey` | Greets you based on time of day |
-| `what's the time` | Tells current time naturally |
-| `what's the date` | Tells today's date with context |
-| `weather in Mumbai` | Opens Google weather for that city |
-| `open google` | Opens Google in browser |
-| `open youtube` | Opens YouTube |
-| `open gmail` | Opens Gmail |
-| `open whatsapp` | Opens WhatsApp Web |
-| `open netflix` | Opens Netflix |
-| `open instagram` | Opens Instagram |
-| `open notepad` | Opens Windows Notepad |
-| `open calculator` | Opens Windows Calculator |
-| `open paint` | Opens MS Paint |
-| `search for python tutorials` | Searches Google |
-| `search youtube for lofi music` | Searches YouTube |
-| `wikipedia machine learning` | Searches Wikipedia |
-| `tell me a joke` | Tells a programmer joke |
-| `tell me a fact` | Tells a fun fact |
-| `what can you do` | Lists all commands |
-| `exit / bye / quit` | Shuts down Nova |
+| Anything at all | Gemini AI answers it! |
+| `hello` / `hi` | Time-based greeting |
+| `what time is it` | Tells current time |
+| `what's the date` | Tells today's date |
+| `tell me a joke` | Pirate-themed joke |
+| `fun fact` | Random interesting fact |
+| `explain [anything]` | Gemini explains it |
+| `write [anything]` | Gemini writes it |
+| `help me with code` | Gemini helps debug |
+| `clear` / `reset` | Clears memory |
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Files
 
 ```
-voice_assistant/
-├── nova_gui.py        ← GUI version (run this!)
-├── assistant.py       ← Terminal version
-├── utils.py           ← Time, date, jokes, facts
-├── websites.py        ← Website & app commands
-├── requirements.txt   ← Dependencies
-└── README.md          ← This file
+luffy-ai/
+├── app.py              ← Web version (Streamlit)
+├── assistant.py        ← Terminal + voice version
+├── ai_brain.py         ← Gemini AI integration
+├── utils.py            ← Time, date, jokes, facts
+├── websites.py         ← Website & app commands
+├── requirements.txt    ← Web dependencies (2 lines!)
+├── config.example.py   ← API key template
+├── .gitignore          ← Keeps secrets safe
+└── README.md           ← This file
 ```
 
 ---
 
-## ⚙️ Configuration
-
-Open `nova_gui.py` and edit the top section:
-
-```python
-ASSISTANT_NAME = "Nova"     # Change assistant name
-LANGUAGE       = "en-in"    # en-in / en-us / en-gb
-SPEECH_RATE    = 150        # Speaking speed
-LISTEN_TIMEOUT = 6          # Seconds to wait for speech
-MAX_RETRIES    = 3          # Retry attempts on failure
-```
-
----
-
-## 🛠️ Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| Mic not detected | Check Windows Sound → Input device |
-| PyAudio install fails | Use `pipwin install pyaudio` |
-| Can't understand speech | Speak clearly, check internet |
-| No voice output | Check speaker / Windows volume |
-| `ModuleNotFoundError` | Make sure venv is activated |
-
----
-
-## 🏗️ Built With
-
-- `speechrecognition` — Voice to text
-- `pyttsx3` — Text to voice  
-- `pyaudio` — Microphone access
-- `tkinter` — GUI framework
-- `datetime` — Time and date
-- `webbrowser` — Open websites
-- `os` — Open Windows apps
-
----
-
-*Built with ❤️ using Python*
+*🏴‍☠️ "I'm gonna be King of the Pirates — AND the best AI assistant!" — Luffy AI*
