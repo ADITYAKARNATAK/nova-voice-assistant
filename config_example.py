@@ -5,7 +5,7 @@
 # ============================================
 
 # Get FREE key at: https://aistudio.google.com/app/apikey
-GEMINI_API_KEY = "AIzaSyANorU2QjkZK27cugM2ficOI_vWBHkLIAc"
+GEMINI_API_KEY = "enter your gemini key"
 
 ASSISTANT_NAME = "Luffy"
 LANGUAGE       = "en-in"   # en-in / en-us / en-gb
